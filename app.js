@@ -20,6 +20,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/download', downloadRoutes);
 app.use('/api/files', filesRoutes);
+app.get("/", (req, res) => {
+  res.send("SecureDocs AI Backend is running!");
+});
+
 
 // ✅ DB connect
 mongoose.connect('mongodb+srv://harshkumbhare956:secure123@cluster0.gl0bv9e.mongodb.net/securedocs')
