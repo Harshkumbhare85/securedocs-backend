@@ -14,13 +14,19 @@ router.get('/shared/:token', async (req, res) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     const doc = await Document.findById(decoded.docId);
 
-    // 🔒 Validate token and file association
-    if (!doc || doc.accessToken !== token) {
+    if (!doc) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+
+    // ✅ Find the matching shared entry
+    const sharedEntry = doc.sharedWith.find(entry => entry.token === token);
+
+    if (!sharedEntry) {
       return res.status(403).json({ error: 'Invalid or expired token' });
     }
 
     // ⏳ Check if token is expired
-    if (new Date() > new Date(doc.expiresAt)) {
+    if (new Date() > new Date(sharedEntry.expiresAt)) {
       return res.status(403).json({ error: 'Token has expired' });
     }
 
