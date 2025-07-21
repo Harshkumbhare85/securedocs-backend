@@ -29,7 +29,7 @@ router.post('/share/:id', verifyToken, async (req, res) => {
     await doc.save();
 
     // 5. Create link
-    const link = `https://2251085a24c3.ngrok-free.app/api/shared/${token}`;
+    const link = `https://securedocs-backend.onrender.com/api/shared/${token}`;
 ;
 
 
