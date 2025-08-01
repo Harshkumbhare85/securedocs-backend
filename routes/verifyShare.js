@@ -18,10 +18,15 @@ router.get('/verify-share/:token', async (req, res) => {
     }
 
     // ✅ Send download link
-    res.json({
-      fileName: doc.originalName,
-      downloadUrl: `http://${req.hostname}:5000/api/documents/${doc._id}/download`,
-    });
+  
+
+   
+res.json({
+  fileName: doc.originalName,
+  downloadUrl: `https://securedocs-backend.onrender.com/api/shared-download/${token}`,
+});
+
+
 
   } catch (err) {
     res.status(400).json({ error: 'Invalid or expired token' });

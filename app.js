@@ -13,16 +13,20 @@ const authRoutes = require('./routes/auth');
 const uploadRoutes = require('./routes/upload');
 const downloadRoutes = require('./routes/download');
 const filesRoutes = require('./routes/files');
-
+const sharedDownload = require('./routes/sharedDownload');
 
 // ✅ Route registrations
 app.use('/api/auth', authRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/download', downloadRoutes);
 app.use('/api/files', filesRoutes);
+app.use('/api', sharedDownload);
 app.get("/", (req, res) => {
   res.send("SecureDocs AI Backend is running!");
 });
+
+
+
 
 
 // ✅ DB connect
