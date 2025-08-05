@@ -4,11 +4,27 @@ const cors = require('cors');
 const app = express();
 require('dotenv').config();
 
-app.use(cors());
+// ✅ CORS Configuration
+const allowedOrigins = [
+  'https://securedocs-frontend-xi.vercel.app',
+  'https://securedocs.vercel.app' // include if you set a custom domain
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like Postman or server-to-server)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('❌ Not allowed by CORS: ' + origin));
+    }
+  },
+  credentials: true, // Allow credentials (cookies, tokens, etc.)
+}));
+
 app.use(express.json());
 
-// ✅ Route imports (make sure these paths are correct)
-// ✅ CORRECT paths (since you're already inside /backend folder)
+// ✅ Route imports
 const authRoutes = require('./routes/auth');
 const uploadRoutes = require('./routes/upload');
 const downloadRoutes = require('./routes/download');
@@ -21,20 +37,17 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/download', downloadRoutes);
 app.use('/api/files', filesRoutes);
 app.use('/api', sharedDownload);
+
 app.get("/", (req, res) => {
-  res.send("SecureDocs AI Backend is running!");
+  res.send("✅ SecureDocs AI Backend is running!");
 });
 
-
-
-
-
-// ✅ DB connect
+// ✅ MongoDB Connection
 mongoose.connect('mongodb+srv://harshkumbhare956:secure123@cluster0.gl0bv9e.mongodb.net/securedocs')
-.then(() => console.log('✅ MongoDB connected'))
-.catch(err => console.error('❌ MongoDB error:', err));
+  .then(() => console.log('✅ MongoDB connected'))
+  .catch(err => console.error('❌ MongoDB error:', err));
 
-// ✅ Start server
+// ✅ Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
