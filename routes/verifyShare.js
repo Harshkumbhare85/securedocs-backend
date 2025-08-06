@@ -3,6 +3,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const Document = require('../models/Document');
 const router = express.Router();
+require('dotenv').config(); 
 
 // ✅ Change this route to match the email URL
 router.get('/shared/:token', async (req, res) => {

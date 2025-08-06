@@ -16,9 +16,9 @@ const sharedWithSchema = new mongoose.Schema({
 });
 
 const documentSchema = new mongoose.Schema({
-  originalname: String,
+  originalName: String,  // ✅ Fix applied here
   encryptedPath: String,
-  mimetype: String,
+  mimeType: String,      // ✅ Optional: ensure consistent casing
   size: Number,
   uploadedBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -32,5 +32,4 @@ const documentSchema = new mongoose.Schema({
 });
 
 const DocumentModel = mongoose.model('Document', documentSchema);
-
 module.exports = DocumentModel;

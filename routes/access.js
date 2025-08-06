@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const Document = require('../models/Document');
+require('dotenv').config();
 
-const JWT_SECRET = 'mysecuredocs_secretkey'; // Must match token generation key
+const JWT_SECRET = process.env.JWT_SECRET; // ✅ Correctly read from .env
 
 // 📥 GET /api/shared/:token - Validate token and serve the file
 router.get('/shared/:token', async (req, res) => {
