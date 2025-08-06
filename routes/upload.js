@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const { encryptBuffer, generateKeyIV } = require('../utils/encryption'); // ✅ MISSING earlier
+const { encryptBuffer, generateKeyIV } = require('../utils/encryption');
 const Document = require('../models/Document');
 const verifyToken = require('../middleware/jwtMiddleware');
 const { v4: uuidv4 } = require('uuid');
@@ -18,13 +18,12 @@ if (!fs.existsSync(uploadsDir)) {
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// 📁 POST /api/upload (with real encryption)
 router.post('/upload', verifyToken, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
 
-    // ✅ Encrypt file buffer
+    // ✅ Encrypt the file
     const { key, iv } = generateKeyIV();
     const encrypted = encryptBuffer(req.file.buffer, key, iv);
 
@@ -32,8 +31,9 @@ router.post('/upload', verifyToken, upload.single('file'), async (req, res) => {
     const filename = `${uuidv4()}${path.extname(req.file.originalname)}`;
     const encryptedPath = path.join(uploadsDir, filename);
     fs.writeFileSync(encryptedPath, encrypted);
+    console.log("✅ File saved to:", encryptedPath);
 
-    // ✅ Save metadata
+    // ✅ Save metadata in DB
     const newDoc = new Document({
       originalName: req.file.originalname,
       encryptedPath,
@@ -49,7 +49,7 @@ router.post('/upload', verifyToken, upload.single('file'), async (req, res) => {
 
   } catch (err) {
     console.error("❌ Upload error:", err);
-    res.status(500).json({ error: 'Internal error during upload' });
+    res.status(500).json({ error: 'Upload failed' });
   }
 });
 

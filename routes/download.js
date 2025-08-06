@@ -38,9 +38,12 @@ router.get('/:token', async (req, res) => {
     const iv = Buffer.from(doc.iv, 'hex');
     const decrypted = decryptBuffer(encryptedData, key, iv);
 
-   /* res.setHeader('Content-Disposition', `attachment; filename="${doc.originalName}"`);
+    // ✅ Send decrypted file as download
+    res.setHeader('Content-Disposition', `attachment; filename="${doc.originalName}"`);
     res.setHeader('Content-Type', doc.mimeType || 'application/octet-stream');
-    res.send(decrypted);*/
+    res.end(decrypted); // ✅ Use `end()` for binary files
+
+    console.log(`✅ File "${doc.originalName}" shared successfully.`);
   } catch (err) {
     console.error('❌ Shared download error:', err.message);
     res.status(403).json({ error: 'Token invalid or expired. Request a new share link.' });
