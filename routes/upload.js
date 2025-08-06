@@ -17,34 +17,38 @@ if (!fs.existsSync(uploadsDir)) {
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
+// 📁 POST /api/upload (with real encryption)
 router.post('/upload', verifyToken, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-    if (!req.user || !req.user.userId) return res.status(401).json({ error: 'Unauthorized' });
+    if (!req.user?.userId) return res.status(401).json({ error: 'Unauthorized' });
 
+    // ✅ Encrypt file buffer
+    const { key, iv } = generateKeyIV();
+    const encrypted = encryptBuffer(req.file.buffer, key, iv);
+
+    // ✅ Save encrypted file
     const filename = `${uuidv4()}${path.extname(req.file.originalname)}`;
     const encryptedPath = path.join(uploadsDir, filename);
+    fs.writeFileSync(encryptedPath, encrypted);
 
-    // ⛔ No encryption – store raw file for now
-    fs.writeFileSync(encryptedPath, req.file.buffer);
-    console.log("🟢 Original file size:", req.file.buffer.length);
-
+    // ✅ Save metadata
     const newDoc = new Document({
       originalName: req.file.originalname,
       encryptedPath,
-      key: '00', // dummy
-      iv: '00',  // dummy
+      key: key.toString('hex'),
+      iv: iv.toString('hex'),
       size: req.file.size,
       mimeType: req.file.mimetype,
       uploadedBy: req.user.userId,
     });
 
     await newDoc.save();
+    res.status(200).json({ msg: '✅ File encrypted & uploaded successfully' });
 
-    res.status(200).json({ msg: 'File uploaded successfully (no encryption)' });
   } catch (err) {
     console.error("❌ Upload error:", err);
-    res.status(500).json({ error: 'Internal server error during upload' });
+    res.status(500).json({ error: 'Internal error during upload' });
   }
 });
 
