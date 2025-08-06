@@ -6,8 +6,8 @@ const { encryptBuffer, generateKeyIV } = require('../utils/encryption');
 const { v4: uuidv4 } = require('uuid');
 const Document = require('../models/Document');
 const verifyToken = require('../middleware/jwtMiddleware');
-const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const router = express.Router();
@@ -19,11 +19,12 @@ if (!fs.existsSync(uploadsDir)) {
   console.log("✅ Created 'uploads' directory");
 }
 
-// ⚙️ Multer setup
+// ⚙️ Multer setup (memory storage for encryption)
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// 🔐 POST /upload
+
+// 🔐 POST /api/upload — Upload and encrypt file
 router.post('/upload', verifyToken, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
@@ -44,18 +45,19 @@ router.post('/upload', verifyToken, upload.single('file'), async (req, res) => {
       size,
       mimeType: mimetype,
       uploadedBy: req.user.userId,
-      sharedWith: []  // ✅ initialize empty array
+      sharedWith: [],
     });
 
     await newDoc.save();
-    res.status(200).json({ msg: 'File uploaded and encrypted successfully' });
+    res.status(200).json({ msg: '✅ File uploaded and encrypted successfully' });
   } catch (err) {
     console.error('❌ Upload error:', err);
     res.status(500).json({ error: 'Upload failed' });
   }
 });
 
-// 📄 GET /files
+
+// 📄 GET /api/files — Fetch user's uploaded files
 router.get('/files', verifyToken, async (req, res) => {
   try {
     const files = await Document.find({ uploadedBy: req.user.userId }).sort({ createdAt: -1 });
@@ -66,7 +68,8 @@ router.get('/files', verifyToken, async (req, res) => {
   }
 });
 
-// 🗑️ DELETE /files/:id
+
+// 🗑️ DELETE /api/files/:id — Delete file
 router.delete('/files/:id', verifyToken, async (req, res) => {
   try {
     const doc = await Document.findById(req.params.id);
@@ -74,16 +77,20 @@ router.delete('/files/:id', verifyToken, async (req, res) => {
     if (doc.uploadedBy.toString() !== req.user.userId)
       return res.status(403).json({ error: 'Unauthorized' });
 
-    fs.unlinkSync(doc.encryptedPath);
+    if (fs.existsSync(doc.encryptedPath)) {
+      fs.unlinkSync(doc.encryptedPath);
+    }
+
     await doc.deleteOne();
-    res.json({ msg: 'File deleted successfully' });
+    res.json({ msg: '🗑️ File deleted successfully' });
   } catch (err) {
     console.error('❌ Delete file error:', err);
     res.status(500).json({ error: 'Server error while deleting file' });
   }
 });
 
-// 📥 GET /files/:id/download
+
+// 📥 GET /api/files/:id/download — Download file
 router.get('/files/:id/download', verifyToken, async (req, res) => {
   try {
     const file = await Document.findById(req.params.id);
@@ -94,19 +101,15 @@ router.get('/files/:id/download', verifyToken, async (req, res) => {
     if (!fs.existsSync(file.encryptedPath))
       return res.status(404).json({ error: 'File not found on disk' });
 
-    res.download(file.encryptedPath, file.originalName, (err) => {
-      if (err) {
-        console.error('❌ Download error:', err);
-        res.status(500).json({ error: 'Failed to download file' });
-      }
-    });
+    res.download(file.encryptedPath, file.originalName);
   } catch (err) {
     console.error('❌ Download route error:', err);
     res.status(500).json({ error: 'Server error during download' });
   }
 });
 
-// 📤 POST /share
+
+// 📤 POST /api/share — Share file via email (Gmail)
 router.post('/share', verifyToken, async (req, res) => {
   const { fileId, recipientEmail } = req.body;
 
@@ -115,12 +118,12 @@ router.post('/share', verifyToken, async (req, res) => {
     if (!file) return res.status(404).json({ message: 'File not found' });
 
     const token = jwt.sign({ docId: file._id }, process.env.JWT_SECRET, { expiresIn: '10m' });
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     file.sharedWith.push({ email: recipientEmail, token, expiresAt });
     await file.save();
 
-    const shareLink = `http://localhost:5000/api/files/shared/${token}`;
+    const shareLink = `${process.env.REACT_APP_API_URL}/api/files/shared/${token}`;
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -134,19 +137,22 @@ router.post('/share', verifyToken, async (req, res) => {
       from: `"SecureDocs AI" <${process.env.EMAIL_USER}>`,
       to: recipientEmail,
       subject: '🔐 A secure document has been shared with you',
-      html: `<p>You have received a secure file. Click below to download (valid for 10 minutes):</p>
-             <a href="${shareLink}" target="_blank">${shareLink}</a>`,
+      html: `
+        <p>You have received a secure file. Click below to download (valid for 10 minutes):</p>
+        <a href="${shareLink}" target="_blank">${shareLink}</a>
+      `,
     });
 
-    res.status(200).json({ message: 'File shared successfully' });
+    res.status(200).json({ message: '✅ File shared successfully' });
   } catch (err) {
     console.error('❌ Share error:', err);
     res.status(500).json({ message: 'Server error during sharing' });
   }
 });
 
-// 📥 GET /shared/:token
-router.get('/shared/:token', async (req, res) => {
+
+// 📥 GET /api/files/shared/:token — Access shared file
+router.get('/files/shared/:token', async (req, res) => {
   const { token } = req.params;
 
   try {
@@ -159,6 +165,10 @@ router.get('/shared/:token', async (req, res) => {
 
     if (new Date() > new Date(sharedEntry.expiresAt)) {
       return res.status(403).json({ error: 'Token has expired' });
+    }
+
+    if (!fs.existsSync(doc.encryptedPath)) {
+      return res.status(404).json({ error: 'File not found on server' });
     }
 
     res.download(doc.encryptedPath, doc.originalName);
