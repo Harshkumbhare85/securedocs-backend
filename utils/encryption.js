@@ -1,27 +1,27 @@
+// utils/encryption.js
 const crypto = require('crypto');
 
 const algorithm = 'aes-256-cbc';
 
-// 🔐 Encrypt buffer
 function encryptBuffer(buffer, key, iv) {
   const cipher = crypto.createCipheriv(algorithm, key, iv);
-  const encrypted = Buffer.concat([cipher.update(buffer), cipher.final()]);
-  return encrypted;
+  return Buffer.concat([cipher.update(buffer), cipher.final()]);
 }
 
-// 🔓 Decrypt buffer
-function decryptBuffer(encryptedBuffer, key, iv) {
+function decryptBuffer(buffer, key, iv) {
   const decipher = crypto.createDecipheriv(algorithm, key, iv);
-  const decrypted = Buffer.concat([decipher.update(encryptedBuffer), decipher.final()]);
-  return decrypted;
+  return Buffer.concat([decipher.update(buffer), decipher.final()]);
 }
 
-// Export all
+function generateKeyIV() {
+  return {
+    key: crypto.randomBytes(32),
+    iv: crypto.randomBytes(16),
+  };
+}
+
 module.exports = {
   encryptBuffer,
-  decryptBuffer, // ✅ now added
-  generateKeyIV: () => ({
-    key: crypto.randomBytes(32),
-    iv: crypto.randomBytes(16)
-  })
+  decryptBuffer,
+  generateKeyIV,
 };

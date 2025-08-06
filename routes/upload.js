@@ -32,8 +32,8 @@ router.post('/upload', verifyToken, upload.single('file'), async (req, res) => {
     }
 
     // Encrypt file
-    const { key, iv } = generateKeyIV();
-    const encrypted = encryptBuffer(req.file.buffer, key, iv);
+   // const { key, iv } = generateKeyIV();
+    // const encrypted = encryptBuffer(req.file.buffer, key, iv);
 
     // Generate unique filename and path
     const filename = `${uuidv4()}${path.extname(req.file.originalname)}`;
@@ -45,7 +45,7 @@ router.post('/upload', verifyToken, upload.single('file'), async (req, res) => {
 console.log("🔐 Encrypted file size:", encrypted.length);
 
     // Save metadata in MongoDB
-    const newDoc = new Document({
+ /*   const newDoc = new Document({
       originalName: req.file.originalname,
       encryptedPath,
       key: key.toString('hex'),
@@ -53,7 +53,16 @@ console.log("🔐 Encrypted file size:", encrypted.length);
       size: req.file.size,
       mimeType: req.file.mimetype,
       uploadedBy: req.user.userId,
-    });
+    });*/
+    const newDoc = new Document({
+  originalName: req.file.originalname,
+  encryptedPath,
+  key: '00', // dummy
+  iv: '00',  // dummy
+  size: req.file.size,
+  mimeType: req.file.mimetype,
+  uploadedBy: req.user.userId,
+});
 
     await newDoc.save();
 
