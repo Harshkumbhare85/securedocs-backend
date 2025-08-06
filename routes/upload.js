@@ -41,6 +41,8 @@ router.post('/upload', verifyToken, upload.single('file'), async (req, res) => {
 
     // Write encrypted file to disk
     fs.writeFileSync(encryptedPath, encrypted);
+  console.log("🟢 Original file size:", req.file.buffer.length);
+console.log("🔐 Encrypted file size:", encrypted.length);
 
     // Save metadata in MongoDB
     const newDoc = new Document({

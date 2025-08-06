@@ -12,25 +12,20 @@ router.get('/shared-download/:token', async (req, res) => {
   const { token } = req.params;
 
   try {
-    // 🔐 Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const doc = await Document.findById(decoded.docId);
-    if (!doc) {
-      return res.status(404).json({ error: 'Document not found' });
-    }
 
-    // 🔍 Validate shared entry
+    if (!doc) return res.status(404).json({ error: 'Document not found' });
+
     const shareEntry = doc.sharedWith.find(entry => entry.token === token);
     if (!shareEntry || new Date() > new Date(shareEntry.expiresAt)) {
       return res.status(403).json({ error: 'Link has expired or is invalid' });
     }
 
-    // 📂 Validate path
     if (!fs.existsSync(doc.encryptedPath)) {
       return res.status(404).json({ error: 'Encrypted file not found on server' });
     }
 
-    // 🔑 Decrypt file
     if (!doc.key || !doc.iv) {
       return res.status(500).json({ error: 'Decryption metadata missing' });
     }
@@ -38,9 +33,13 @@ router.get('/shared-download/:token', async (req, res) => {
     const encryptedData = fs.readFileSync(doc.encryptedPath);
     const key = Buffer.from(doc.key, 'hex');
     const iv = Buffer.from(doc.iv, 'hex');
+
+    console.log("🟡 Encrypted read size:", encryptedData.length);
+
     const decrypted = decryptBuffer(encryptedData, key, iv);
 
-    // 📤 Send decrypted file
+    console.log("🔓 Decrypted size:", decrypted.length);
+
     res.setHeader('Content-Disposition', `attachment; filename="${doc.originalName}"`);
     res.setHeader('Content-Type', doc.mimeType || 'application/octet-stream');
     res.send(decrypted);
@@ -50,5 +49,8 @@ router.get('/shared-download/:token', async (req, res) => {
     res.status(401).json({ error: 'Invalid or expired token. Please request a new link.' });
   }
 });
+
+
+
 
 module.exports = router;
