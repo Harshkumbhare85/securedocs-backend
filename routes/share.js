@@ -35,7 +35,8 @@ router.post('/share/:id', verifyToken, async (req, res) => {
 
     // 6. Send email
     const mailOptions = {
-      from: `"SecureDocs AI" <${process.env.EMAIL_USER}>`,
+      from: process.env.EMAIL_FROM,
+
       to: email,
       subject: '🔐 You have received a secure file',
       html: `
