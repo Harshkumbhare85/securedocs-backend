@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+const { encryptBuffer, generateKeyIV } = require('../utils/encryption'); // ✅ MISSING earlier
 const Document = require('../models/Document');
 const verifyToken = require('../middleware/jwtMiddleware');
 const { v4: uuidv4 } = require('uuid');
