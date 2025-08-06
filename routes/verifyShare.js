@@ -1,9 +1,11 @@
+// ✅ routes/verifyShare.js
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const Document = require('../models/Document');
 const router = express.Router();
 
-router.get('/verify-share/:token', async (req, res) => {
+// ✅ Change this route to match the email URL
+router.get('/shared/:token', async (req, res) => {
   const { token } = req.params;
 
   try {
@@ -17,16 +19,10 @@ router.get('/verify-share/:token', async (req, res) => {
       return res.status(403).json({ error: 'Link expired or invalid' });
     }
 
-    // ✅ Send download link
-  
-
-   
-res.json({
-  fileName: doc.originalName,
-  downloadUrl: `https://securedocs-backend.onrender.com/api/shared-download/${token}`,
-});
-
-
+    res.json({
+      fileName: doc.originalName,
+      downloadUrl: `https://securedocs-backend.onrender.com/api/shared-download/${token}`,
+    });
 
   } catch (err) {
     res.status(400).json({ error: 'Invalid or expired token' });
