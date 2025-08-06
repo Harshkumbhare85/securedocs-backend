@@ -3,7 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const DocumentModel = require('../models/Document');
 const verifyToken = require('../middleware/jwtMiddleware');
-const transporter = require('../utils/email'); // ✅ use extracted transporter
+const sgMail = require('../utils/sendgrid'); // ✅ Use SendGrid SDK
 require('dotenv').config();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'mysecuredocs_secretkey';
@@ -30,14 +30,11 @@ router.post('/share/:id', verifyToken, async (req, res) => {
 
     // 5. Create link
     const link = `https://securedocs-backend.onrender.com/api/shared/${token}`;
-;
 
-
-    // 6. Send email
-    const mailOptions = {
-      from: process.env.EMAIL_FROM,
-
+    // 6. Send email via SendGrid
+    await sgMail.send({
       to: email,
+      from: process.env.EMAIL_FROM,
       subject: '🔐 You have received a secure file',
       html: `
         <p>Hello,</p>
@@ -46,10 +43,8 @@ router.post('/share/:id', verifyToken, async (req, res) => {
         <p>This link will expire in 30 minutes for security.</p>
         <br/>
         <p>Regards,<br/>SecureDocs AI</p>
-      `
-    };
-
-    await transporter.sendMail(mailOptions);
+      `,
+    });
 
     // 7. Done
     res.json({ msg: `✅ Link sent to ${email}`, token });
