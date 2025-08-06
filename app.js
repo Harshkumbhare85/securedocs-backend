@@ -7,7 +7,8 @@ require('dotenv').config();
 // ✅ CORS Configuration
 const allowedOrigins = [
   'https://securedocs-frontend-xi.vercel.app',
-  'https://securedocs.vercel.app' // include if you set a custom domain
+  'https://securedocs.vercel.app', // include if you set a custom domain,
+  'https://vercel.com/harshkumbhare85s-projects/securedocs-frontend/2g9PN5HBGaXyQN7og4w6ybLBtzLw',
 ];
 
 app.use(cors({
